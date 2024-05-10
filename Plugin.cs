@@ -16,7 +16,7 @@ using System.Collections;
 using System.Drawing;
 using System;
 
-namespace OGAT_modding_API
+namespace OGAT_modding_API      //look to server info class to get admin name for commands (found through server list do not know how to get from a lobby yet)
 {
 
     [BepInPlugin("OGAT_modding_API", MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
