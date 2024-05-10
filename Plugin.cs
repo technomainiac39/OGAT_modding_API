@@ -26,7 +26,7 @@ namespace OGAT_modding_API
         {
             // Plugin startup logic
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-            var harmony = new Harmony("com.technomainiac.Ogat_modding_Api");
+            var harmony = new Harmony("com.technomainiac.OGAT_modding_API");
             harmony.PatchAll();
         }
 
@@ -37,10 +37,6 @@ namespace OGAT_modding_API
 
         public void Update()    //updates plugin, will be used eventually to open mod menu
         {
-            if(Input.GetKeyDown(KeyCode.Comma))
-            {
-                StartCoroutine(API_Methods.PlayerTest("technomainiac39"));
-            }
         }
     }
 
@@ -54,7 +50,7 @@ namespace OGAT_modding_API
 
         public SG.OGAT.Chat chat;
 
-        public API_Methods()    //adds all commands and thier methods to command dict
+        public API_Methods()    //adds all commands and their methods to command dict
         {
             commands.Add("list", ListPlayers);
         }
@@ -62,6 +58,7 @@ namespace OGAT_modding_API
         public void LogToOgatChat()
         {
         }
+
         static public void CheckForCommand(string command, string username)  //takes text from chat and searches for command
         {
             var myLogSource = new ManualLogSource("OGAT_MODDING_API");
@@ -75,6 +72,12 @@ namespace OGAT_modding_API
 
 
             string[] message = command.Split(' ');
+
+            foreach (string line in message)
+            {
+                myLogSource.LogInfo(line);
+            }
+
             myLogSource.LogInfo(message[1]);
             if (message[1].StartsWith("#"))
             {
@@ -83,8 +86,6 @@ namespace OGAT_modding_API
                 {
                     if (comm == kvp.Key)
                     {
-                        //
-
                         myLogSource.LogInfo($"Running Command: {comm}");
                         BepInEx.Logging.Logger.Sources.Remove(myLogSource);
 
@@ -130,29 +131,6 @@ namespace OGAT_modding_API
             return null;
         }
 
-        static public IEnumerator PlayerTest(string username)   //the coroutine of player tests, called in update
-        {
-            if (UsersAndIds == null)
-            {
-                List<string> param = new List<string>();
-                param.Add("");
-                param.Add(username);
-                ListPlayers(param);
-            }
-            var player = FindPlayer(username);
-            if (player == null)
-            {
-                yield break;
-            }
-            //
-            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
-            BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            myLogSource.LogInfo($"PlayerTest mags left: {player.magazinesLeftForCurrentWeapon}");
-            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
-
-            //
-            yield return null;
-        }
     }
     
     ///////////////////Anticheat Patches///////////////////////
@@ -196,7 +174,7 @@ namespace OGAT_modding_API
     ///////////////////Chat Patches///////////////////////
 
     [HarmonyPatch]
-    public class ChatPatches
+    public class ChatPatches        //will probably want to do this patch that dictates when to check for command thing different
     {
         public static int Count = 0;
 
