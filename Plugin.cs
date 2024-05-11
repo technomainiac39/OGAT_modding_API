@@ -36,7 +36,7 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         public void Start()
         {
             API_Methods.commands["list"] = API_Methods.ListPlayers;
-            API_Methods.commands["host"] = API_Methods.ListPlayers;
+            API_Methods.commands["host"] = API_Methods.SendHostName;
         }
 
         public void Update()    //updates plugin, will be used eventually to open mod menu
@@ -145,8 +145,8 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         static public bool SendHostName(List<string> comm_and_user)     //sends the hostname to ogat chat, command is #host
         {
             string text = $"The Host is {ServerPatches.Hostname}";
-
-            Singleton<Lobby>.I.AddChatLine(string.Empty, text, false);
+            
+            Singleton<Lobby>.I.AddChatLine(string.Empty, text, true);
             return true;
         }
     }
@@ -162,7 +162,6 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         [HarmonyPatch(typeof(Game), "Server_start")]
         public static void GetHostName(Game __instance)
         {
-            Hostname = "";
             Hostname = NetPlayer.Mine.profile.username;
         }
 
@@ -170,7 +169,6 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         [HarmonyPatch(typeof(ConnectToServer), "OnConnectedToServer", MethodType.Normal)]
         public static bool GetHostNameOnStart(ConnectToServer __instance)
         {
-            Hostname = "";
 
             var myLogSource = new ManualLogSource("OGAT_MODDING_API");
             BepInEx.Logging.Logger.Sources.Add(myLogSource);
@@ -302,7 +300,8 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
             return false;
         }
 
-        [HarmonyPatch]
+        /*
+        [HarmonyPostfix]
         [HarmonyPatch(typeof(Game), "Server_start")]        //havent been able to figure out how it works yet
         public static void alter_serverStart(Game __instance, string DMMPKHIECJK, string EDCCGAHKIJB, bool AAMKAMCPAFO)
         {
@@ -314,7 +313,7 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
             ///
 
             //return true;
-        }
+        }*/
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(SGNet), "send_to_team")]   //sending messages to team, (not chnaging teams :( too bad I guess)
