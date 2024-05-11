@@ -15,6 +15,9 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Drawing;
 using System;
+using SG.Transport;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.CompilerServices;
 
 namespace OGAT_modding_API      //look to server info class to get admin name for commands (found through server list do not know how to get from a lobby yet)
 {
@@ -33,6 +36,7 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         public void Start()
         {
             API_Methods.commands["list"] = API_Methods.ListPlayers;
+            API_Methods.commands["host"] = API_Methods.ListPlayers;
         }
 
         public void Update()    //updates plugin, will be used eventually to open mod menu
@@ -53,6 +57,7 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         public API_Methods()    //adds all commands and their methods to command dict
         {
             commands.Add("list", ListPlayers);
+            commands.Add("host", SendHostName);
         }
 
         public void LogToOgatChat()
@@ -131,8 +136,55 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
             return null;
         }
 
+        static public string GetHostName()      //might not need this should be able to use netcode.ISHost to use as bool to check insead of check a users username
+        {
+            return ServerPatches.Hostname;
+        }
+
+
+        static public bool SendHostName(List<string> comm_and_user)     //sends the hostname to ogat chat, command is #host
+        {
+            string text = $"The Host is {ServerPatches.Hostname}";
+
+            Singleton<Lobby>.I.AddChatLine(string.Empty, text, false);
+            return true;
+        }
     }
-    
+
+    ///////////////////Server Patches for Hostname and shit///////////////////////
+
+    [HarmonyPatch]
+    public class ServerPatches
+    {
+        public static string Hostname;
+        
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game), "Server_start")]
+        public static void GetHostName(Game __instance)
+        {
+            Hostname = "";
+            Hostname = NetPlayer.Mine.profile.username;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ConnectToServer), "OnConnectedToServer", MethodType.Normal)]
+        public static bool GetHostNameOnStart(ConnectToServer __instance)
+        {
+            Hostname = "";
+
+            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
+            BepInEx.Logging.Logger.Sources.Add(myLogSource);
+            myLogSource.LogInfo("Ran Host name get");
+
+            Hostname = __instance.GBJJJFLIFNE.adminName;
+
+            myLogSource.LogInfo($"host name {Hostname}");
+            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
+            return true;
+        }
+        
+    }
+
     ///////////////////Anticheat Patches///////////////////////
 
     [HarmonyPatch(typeof(CodeStage.AntiCheat.Detectors.InjectionDetector), "OnCheatingDetected")]
@@ -210,35 +262,6 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
             //
             Count ++;
         }
-        /*
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(SG.OGAT.Chat), "addLine")]     //add chatline is what the little chatbox calls when a msg has been entered will call AddChatLine
-        public static bool alter_addLine(IDJNNEJNMMO GGOBEEOMBGG, string BEGNOMMHMHA, string BNOEGGNKMFM, bool LCLEPHOBIFO, SG.OGAT.Chat __instance)
-        {
-
-            BNOEGGNKMFM = FCDLDGDCNML.CPOEAFKLBKE(BNOEGGNKMFM).Trim();
-            string[] array = BNOEGGNKMFM.Split(new char[]
-            {
-                '\n'
-            });
-            foreach (string text in array)
-            {
-                if (text.Trim() != string.Empty)
-                {
-                    //
-                    var myLogSource = new ManualLogSource("OGAT_MODDING_API");
-                    BepInEx.Logging.Logger.Sources.Add(myLogSource);
-                    myLogSource.LogInfo($"Chat Params Passed: {GGOBEEOMBGG}, {BEGNOMMHMHA}, {BNOEGGNKMFM}, {LCLEPHOBIFO}");
-                    BepInEx.Logging.Logger.Sources.Remove(myLogSource);
-                    //
-                    __instance.AIJICJEBIMD(GGOBEEOMBGG, BEGNOMMHMHA, text, false, LCLEPHOBIFO);
-                    Singleton<Lobby>.I.AddChatLine(BEGNOMMHMHA, text, LCLEPHOBIFO);
-                }
-            }
-
-            return false;
-        }
-        */
         
     }
 
