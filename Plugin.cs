@@ -68,20 +68,8 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         {
             var myLogSource = new ManualLogSource("OGAT_MODDING_API");
             BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            myLogSource.LogInfo(command);
-
-            foreach (KeyValuePair<string, Func<List<string>, bool>> pair in commands)
-            {
-                myLogSource.LogInfo($"Command: {pair.Key}");
-            }
-
 
             string[] message = command.Split(' ');
-
-            foreach (string line in message)
-            {
-                myLogSource.LogInfo(line);
-            }
 
             myLogSource.LogInfo(message[1]);
             if (message[1].StartsWith("#"))
@@ -145,10 +133,16 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         static public bool SendHostName(List<string> comm_and_user)     //sends the hostname to ogat chat, command is #host
         {
             string text = $"The Host is {ServerPatches.Hostname}";
-            
-            Singleton<Lobby>.I.AddChatLine(string.Empty, text, true);
+
+            SendLobbyMessage(string.Empty, text, true);
             return true;
         }
+
+        static public void SendLobbyMessage(string username, string message, bool setTrue)  //sends message to lobby chat set username to string.Empty for system message
+        {
+            Singleton<Lobby>.I.AddChatLine(username, message, setTrue);
+        }
+
     }
 
     ///////////////////Server Patches for Hostname and shit///////////////////////
@@ -162,21 +156,25 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         [HarmonyPatch(typeof(Game), "Server_start")]
         public static void GetHostName(Game __instance)
         {
+            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
+            BepInEx.Logging.Logger.Sources.Add(myLogSource);
+
             Hostname = NetPlayer.Mine.profile.username;
+
+            myLogSource.LogInfo($"You are the server host");
+            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(ConnectToServer), "OnConnectedToServer", MethodType.Normal)]
         public static bool GetHostNameOnStart(ConnectToServer __instance)
         {
-
             var myLogSource = new ManualLogSource("OGAT_MODDING_API");
             BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            myLogSource.LogInfo("Ran Host name get");
 
             Hostname = __instance.GBJJJFLIFNE.adminName;
 
-            myLogSource.LogInfo($"host name {Hostname}");
+            myLogSource.LogInfo($"Server hostname is: {Hostname}");
             BepInEx.Logging.Logger.Sources.Remove(myLogSource);
             return true;
         }
@@ -232,32 +230,13 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
         [HarmonyPatch(typeof(Lobby), "AddChatLine")]    //AddChatLine is called in Lobby class and handles all messages being sent
         public static void alter_addChatLine(Lobby __instance, string GKPAOFHOPJJ, string LKPHAKGDPGL, bool LCLEPHOBIFO)
         {
-            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
-            BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            myLogSource.LogInfo("running");
-
             string prop1 = $"{GKPAOFHOPJJ}";
             if (Count != 0)
             {
                 prop1 = __instance.FCABKFCOOAG.Last().text;
                 API_Methods.CheckForCommand(prop1, GKPAOFHOPJJ);
             }
-            if (GKPAOFHOPJJ == "technomainiac39")
-            {
-               // Text text;
-               // text = SGExtensions.FindChildRecursiveHelper<Text>(__instance.AGLMLJACABD, "CHAT_LINE_PREFAB");
-               // Text text2 = UnityEngine.Object.Instantiate<Text>(text, text.transform.parent);
-               // text2.gameObject.SetActive(true);
-               // text2.name = "_line_";
 
-                //text2.text = "<color=orange>[God]</color>:<color=purple> Technomainiac Has Spoken !!</color>";
-
-            }
-
-            //logging
-            myLogSource.LogInfo($"Lobby Properties: {prop1}");
-            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
-            //
             Count ++;
         }
         
@@ -267,16 +246,6 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
     [HarmonyPatch]
     class GamePatches
     {
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(NetPlayer), "FindNetPlayerByUserID")]      //finds player based on the username thing, no longer used by Modding_API
-        public static void alter_findNetPlayerByUserID(string PEOLJGCMGPP, NetPlayer __result)
-        {
-            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
-            BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            //myLogSource.LogInfo($"FindNetPlayer results: {PEOLJGCMGPP}, {__result}");
-            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
-        }
-
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Game), "LoadGameModes")]   //called by game to load all of the game modes
@@ -298,34 +267,6 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
             }
             BepInEx.Logging.Logger.Sources.Remove(myLogSource);
             return false;
-        }
-
-        /*
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game), "Server_start")]        //havent been able to figure out how it works yet
-        public static void alter_serverStart(Game __instance, string DMMPKHIECJK, string EDCCGAHKIJB, bool AAMKAMCPAFO)
-        {
-            ///
-            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
-            BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            myLogSource.LogInfo($"Creating server with params: {DMMPKHIECJK}, {EDCCGAHKIJB}, {AAMKAMCPAFO}");
-            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
-            ///
-
-            //return true;
-        }*/
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(SGNet), "send_to_team")]   //sending messages to team, (not chnaging teams :( too bad I guess)
-        public static void alter_sendToTeam(SGNet __instance, IDJNNEJNMMO GGOBEEOMBGG, KLEPJCJNCIJ BAPAMAPHEPA, params KLEPJCJNCIJ[] JDGFANBJEGB)
-        {
-            ///
-            var myLogSource = new ManualLogSource("OGAT_MODDING_API");
-            BepInEx.Logging.Logger.Sources.Add(myLogSource);
-            myLogSource.LogInfo($"Send to team params Passed: {GGOBEEOMBGG}, {BAPAMAPHEPA}, {JDGFANBJEGB}");
-            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
-            ///
-           // return true;
         }
 
     }
