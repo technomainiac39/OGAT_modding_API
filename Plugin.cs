@@ -18,6 +18,7 @@ using System;
 using SG.Transport;
 using static System.Net.Mime.MediaTypeNames;
 using System.Runtime.CompilerServices;
+using Steamworks;
 
 namespace OGAT_modding_API      //look to server info class to get admin name for commands (found through server list do not know how to get from a lobby yet)
 {
@@ -146,11 +147,15 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
     }
 
     ///////////////////Server Patches for Hostname and shit///////////////////////
+    public delegate void ServerConnect();                                                   //delegate for the event
 
     [HarmonyPatch]
     public class ServerPatches
     {
+        public static event ServerConnect ConnectedToNewServer;     //the event that tracks when joining a server
+
         public static string Hostname;
+        
         
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Game), "Server_start")]
@@ -167,7 +172,7 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(ConnectToServer), "OnConnectedToServer", MethodType.Normal)]
-        public static bool GetHostNameOnStart(ConnectToServer __instance)
+        public static bool OnCOnnectedToServerPatch(ConnectToServer __instance)
         {
             var myLogSource = new ManualLogSource("OGAT_MODDING_API");
             BepInEx.Logging.Logger.Sources.Add(myLogSource);
@@ -176,6 +181,9 @@ namespace OGAT_modding_API      //look to server info class to get admin name fo
 
             myLogSource.LogInfo($"Server hostname is: {Hostname}");
             BepInEx.Logging.Logger.Sources.Remove(myLogSource);
+
+            ConnectedToNewServer?.Invoke(); //invokes the connected to server event
+
             return true;
         }
         
